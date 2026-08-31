@@ -9,7 +9,8 @@ const PBKDF2_ITERATIONS = 15000;
 
 function getCrypto(): Crypto {
   if (typeof crypto !== 'undefined') return crypto;
-  return require('node:crypto').webcrypto as Crypto;
+  if (typeof globalThis.crypto !== 'undefined') return globalThis.crypto;
+  throw new Error('Web Crypto API is not available.');
 }
 
 export async function hashPassword(password: string): Promise<string> {

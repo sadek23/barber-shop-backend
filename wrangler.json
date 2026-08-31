@@ -3,6 +3,7 @@
   "name": "barber-backend",
   "main": "src/index.ts",
   "compatibility_date": "2024-12-01",
+  "workers_dev": true,
   "compatibility_flags": [
     "nodejs_compat"
   ],
@@ -10,15 +11,10 @@
     {
       "binding": "DB",
       "database_name": "barber_shop_db",
-      "database_id": "local-db-id"
+      "database_id": "80849b32-9ddb-4a47-8fe7-98d947ffe721"
     }
   ],
-  "r2_buckets": [
-    {
-      "binding": "STORAGE",
-      "bucket_name": "barber-shop-uploads"
-    }
-  ],
+
   "vars": {
     "JWT_SECRET": "barber-shop-super-secret-jwt-key-change-in-prod",
     "FRONTEND_URL": "http://localhost:3000"

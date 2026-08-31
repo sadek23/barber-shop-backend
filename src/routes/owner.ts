@@ -75,6 +75,10 @@ ownerRoutes.post('/salon/upload-image', async (c) => {
     return c.json({ message: 'Please create a salon first.' }, 404);
   }
 
+  if (!c.env.STORAGE) {
+    return c.json({ message: 'R2 Storage bucket is not enabled on this Cloudflare account yet.' }, 400);
+  }
+
   const filename = `salons/${salon.id}/${Date.now()}-${file.name}`;
   const arrayBuffer = await file.arrayBuffer();
 

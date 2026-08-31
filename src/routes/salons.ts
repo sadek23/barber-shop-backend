@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { drizzle } from 'drizzle-orm/d1';
-import { eq, and, like, sql } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { salons, areas, cities, salonImages, services, stylists } from '../db/schema';
 import { Env } from '../types';
 
@@ -8,9 +8,15 @@ const salonRoutes = new Hono<Env>();
 
 salonRoutes.get('/', async (c) => {
   const db = drizzle(c.env.DB);
-  const { city_id, area_id, search } = c.req.query();
+  const { city, city_id, area, area_id, service, search, query, sort } = c.req.query();
 
-  let query = db.select({
+  const targetCity = city || city_id;
+  const targetArea = area || area_id;
+  const targetSearch = search || query;
+  const targetService = service;
+
+  // Select salons with joined city & area
+  const rawSalons = await db.select({
     id: salons.id,
     ownerId: salons.ownerId,
     areaId: salons.areaId,
@@ -22,42 +28,93 @@ salonRoutes.get('/', async (c) => {
     rating: salons.rating,
     isActive: salons.isActive,
     areaName: areas.name,
+    areaSlug: areas.slug,
     cityId: cities.id,
     cityName: cities.name,
+    citySlug: cities.slug,
   })
   .from(salons)
   .leftJoin(areas, eq(salons.areaId, areas.id))
   .leftJoin(cities, eq(areas.cityId, cities.id))
-  .where(eq(salons.isActive, true));
+  .where(eq(salons.isActive, true))
+  .all();
 
-  const allSalons = await query.all();
   const allImages = await db.select().from(salonImages).all();
+  const allServices = await db.select().from(services).where(eq(services.isActive, true)).all();
 
-  let filtered = allSalons;
-  if (city_id) {
-    filtered = filtered.filter((s) => s.cityId === Number(city_id));
-  }
-  if (area_id) {
-    filtered = filtered.filter((s) => s.areaId === Number(area_id));
-  }
-  if (search) {
-    const searchLower = search.toLowerCase();
-    filtered = filtered.filter((s) =>
-      s.name.toLowerCase().includes(searchLower) ||
-      (s.description && s.description.toLowerCase().includes(searchLower)) ||
-      (s.address && s.address.toLowerCase().includes(searchLower))
-    );
+  let filtered = rawSalons;
+
+  // 1. Filter by City (ID, slug, or name match)
+  if (targetCity) {
+    const cityStr = targetCity.toLowerCase().trim();
+    filtered = filtered.filter((s) => {
+      if (s.cityId && String(s.cityId) === cityStr) return true;
+      if (s.citySlug && s.citySlug.toLowerCase() === cityStr) return true;
+      if (s.cityName && s.cityName.toLowerCase() === cityStr) return true;
+      return false;
+    });
   }
 
+  // 2. Filter by Area (ID, slug, or name match)
+  if (targetArea) {
+    const areaStr = targetArea.toLowerCase().trim();
+    filtered = filtered.filter((s) => {
+      if (s.areaId && String(s.areaId) === areaStr) return true;
+      if (s.areaSlug && s.areaSlug.toLowerCase() === areaStr) return true;
+      if (s.areaName && s.areaName.toLowerCase() === areaStr) return true;
+      return false;
+    });
+  }
+
+  // 3. Filter by Service Name/Keyword
+  if (targetService) {
+    const serviceLower = targetService.toLowerCase().trim();
+    filtered = filtered.filter((s) => {
+      const salonServices = allServices.filter((srv) => srv.salonId === s.id);
+      return salonServices.some((srv) =>
+        srv.name.toLowerCase().includes(serviceLower) ||
+        (srv.description && srv.description.toLowerCase().includes(serviceLower))
+      );
+    });
+  }
+
+  // 4. Filter by General Search Text
+  if (targetSearch) {
+    const searchLower = targetSearch.toLowerCase().trim();
+    filtered = filtered.filter((s) => {
+      const nameMatch = s.name.toLowerCase().includes(searchLower);
+      const descMatch = s.description ? s.description.toLowerCase().includes(searchLower) : false;
+      const addrMatch = s.address ? s.address.toLowerCase().includes(searchLower) : false;
+      const areaMatch = s.areaName ? s.areaName.toLowerCase().includes(searchLower) : false;
+      const cityMatch = s.cityName ? s.cityName.toLowerCase().includes(searchLower) : false;
+      
+      const salonServices = allServices.filter((srv) => srv.salonId === s.id);
+      const serviceMatch = salonServices.some((srv) => srv.name.toLowerCase().includes(searchLower));
+
+      return nameMatch || descMatch || addrMatch || areaMatch || cityMatch || serviceMatch;
+    });
+  }
+
+  // Sort
+  if (sort === 'rating') {
+    filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+  } else if (sort === 'popularity') {
+    filtered.sort((a, b) => b.id - a.id);
+  }
+
+  // Format response matching frontend models
   const result = filtered.map((salon) => {
     const images = allImages.filter((img) => img.salonId === salon.id);
     const primaryImg = images.find((img) => img.isPrimary) || images[0];
+    const salonServices = allServices.filter((srv) => srv.salonId === salon.id);
+
     return {
       ...salon,
       image: primaryImg ? primaryImg.imageUrl : null,
       images,
-      area: { id: salon.areaId, name: salon.areaName, city_id: salon.cityId },
-      city: { id: salon.cityId, name: salon.cityName },
+      services: salonServices,
+      area: { id: salon.areaId, name: salon.areaName, slug: salon.areaSlug, city_id: salon.cityId },
+      city: { id: salon.cityId, name: salon.cityName, slug: salon.citySlug },
     };
   });
 

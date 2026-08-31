@@ -15,9 +15,7 @@ const app = new Hono<Env>();
 // Global Middlewares
 app.use('*', logger());
 app.use('*', cors({
-  origin: (origin, c) => {
-    return c.env.FRONTEND_URL || origin || '*';
-  },
+  origin: (origin) => origin || '*',
   allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization'],
   exposeHeaders: ['Content-Length'],
