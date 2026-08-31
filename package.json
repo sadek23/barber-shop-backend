@@ -1,0 +1,25 @@
+{
+  "name": "backend-worker",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate:local": "wrangler d1 migrations apply barber_shop_db --local",
+    "db:migrate:prod": "wrangler d1 migrations apply barber_shop_db --remote"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "drizzle-orm": "^0.38.3",
+    "hono": "^4.6.14",
+    "jose": "^5.9.6"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241230.0",
+    "@types/bcryptjs": "^3.0.0",
+    "drizzle-kit": "^0.30.1",
+    "typescript": "^5.7.2",
+    "wrangler": "^3.99.0"
+  }
+}

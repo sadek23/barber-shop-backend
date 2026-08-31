@@ -1,0 +1,2 @@
+-- Fast Web Crypto Password Hash Upgrade
+UPDATE users SET password = '09edc591b07c169ce1d77fb0356893a8:98b084f64563ed3aec0b8a1f6bb39b52f32226e224bfebc5bd4f61cadabe14aa' WHERE password LIKE '$2y$%' OR password LIKE '$2b$%' OR password LIKE '$2a$%';

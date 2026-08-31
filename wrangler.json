@@ -1,0 +1,26 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "barber-backend",
+  "main": "src/index.ts",
+  "compatibility_date": "2024-12-01",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "barber_shop_db",
+      "database_id": "local-db-id"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "STORAGE",
+      "bucket_name": "barber-shop-uploads"
+    }
+  ],
+  "vars": {
+    "JWT_SECRET": "barber-shop-super-secret-jwt-key-change-in-prod",
+    "FRONTEND_URL": "http://localhost:3000"
+  }
+}

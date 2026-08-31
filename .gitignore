@@ -1,0 +1,23 @@
+# dependencies
+/node_modules
+
+# Cloudflare Wrangler state & dev secrets
+/.wrangler/
+.dev.vars
+
+# build outputs
+/dist
+/build
+
+# logs & temporary files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# environment variables
+.env
+.env.local
+
+# OS metadata
+.DS_Store
+Thumbs.db
